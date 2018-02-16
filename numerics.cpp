@@ -76,3 +76,27 @@ for(int i=0; i<1000; i++)
 }
 return N;
 }	
+
+std::vector<double> verlet( double h, double N0, double tau1, double tau2 )
+{
+	std::vector<double> N;
+	double l1 = 1./tau1;
+
+	for(int i=0; i<1000; i++)
+	{
+		if(i>1){
+			N.push_back(2*N[i-1]-N[i-2]+h*h*l1*l1*N[i-1]);
+			//std::cout << "i: " << i << '\t' << "h*h*l1*l1*N[i-1]: " << h*h*l1*l1*N[i-1] << std::endl;
+			//std::cout << "i: " << i << '\t' << "2*Ni-1: " << 2*N[i-1] << std::endl;
+			//std::cout << "i: " << i << '\t' << "Ni-2: " << N[i-2] << std::endl;
+		}
+		else if(i==1) {
+			N.push_back(N0-h*l1*N0);
+		}
+		else{ // if i==0
+			N.push_back(N0);
+		}
+	}
+	return N;
+			
+}
