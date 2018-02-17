@@ -3,6 +3,41 @@
 #include <math.h>
 #include <iostream>
 
+//
+double equation::f(double t, unsigned int iterStep,std::vector<double> y)
+{
+	//
+	return l1*y.at(iterStep-1); 
+}
+		
+double equation::gety0() {return y0;}
+
+
+// solver
+std::vector<double> solver::gety() {return y;}
+std::vector<double> solver::gett() {return t;}
+unsigned int solver::getIterStep() {return iterStep;}
+
+//	
+double euler::iterateY(double h) 
+{
+t.push_back(iterStep*h);
+
+if(iterStep > 0){
+	y.push_back( y.at(iterStep-1)-solveEq.f(t.at(iterStep-1), iterStep, y) ); // t.at(iterStep) or t.at(iterStep-1) ???
+}
+else{
+	y.push_back( solveEq.gety0());
+}
+
+++iterStep;
+
+return y.at(iterStep);
+	
+}
+
+
+
 std::vector<double> analytical( double h, double N0, double tau1, double tau2 )
 {
 	double t;
