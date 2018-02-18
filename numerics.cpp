@@ -3,11 +3,11 @@
 #include <math.h>
 #include <iostream>
 
-//
+// equation
 double equation::f(double t, unsigned int iterStep,std::vector<double> y)
 {
-	//
-	return l1*y.at(iterStep-1); 
+	// t is unused because the diff. eq. for radioactive decay does not contain t explicitly. Not the case in general !
+	return -l1*y.at(iterStep-1); 
 }
 		
 double equation::gety0() {return y0;}
@@ -18,24 +18,38 @@ std::vector<double> solver::gety() {return y;}
 std::vector<double> solver::gett() {return t;}
 unsigned int solver::getIterStep() {return iterStep;}
 
-//	
+void solver::resetSolver()
+{
+	iterStep=0;
+	y.erase(y.begin(), y.end());
+	t.erase(t.begin(), t.end());
+}
+
+// euler
+
+euler::euler() 
+{iterStep = 0;}
+
+
 double euler::iterateY(double h) 
 {
-t.push_back(iterStep*h);
+	t.push_back(iterStep*h);
 
-if(iterStep > 0){
-	y.push_back( y.at(iterStep-1)-solveEq.f(t.at(iterStep-1), iterStep, y) ); // t.at(iterStep) or t.at(iterStep-1) ???
-}
-else{
-	y.push_back( solveEq.gety0());
-}
-
-++iterStep;
-
-return y.at(iterStep);
-	
+	if(iterStep > 0){
+		y.push_back( y.at(iterStep-1)+h*solveEq.f(t.at(iterStep-1), iterStep, y) ); // t.at(iterStep) or t.at(iterStep-1) ???
+	}
+	else{
+		y.push_back( solveEq.gety0());
+	}
+	return y.at(iterStep++); // the whole y vector gets stored internally - so return of the iterated y is a bonus
 }
 
+void euler::iterateYN(double h, unsigned int n)
+{
+	for(unsigned int i=0; i<n; i++){
+		this->iterateY(h);
+	}
+}
 
 
 std::vector<double> analytical( double h, double N0, double tau1, double tau2 )
@@ -50,23 +64,23 @@ std::vector<double> analytical( double h, double N0, double tau1, double tau2 )
 	return N;
 }
 
-std::vector<double> euler( double h, double N0, double tau1, double tau2 )
+std::vector<double> eulerf( double h, double N0, double tau1, double tau2 )
 {
-double t;
-std::vector<double> N;
-for(int i=0; i<1000; i++)
-{
-	t=i*h;
+	double t;
+	std::vector<double> N;
+	for(int i=0; i<1000; i++)
+	{
+		t=i*h;
 
-	if(i>0){
-	N.push_back( N[i-1]-1./(tau1)*N[i-1]*h );
-	//std::cout << N[i] << std::endl;
+		if(i>0){
+		N.push_back( N[i-1]-1./(tau1)*N[i-1]*h );
+		//std::cout << N[i] << std::endl;
+		}
+		else{
+		N.push_back(N0);
+		}
 	}
-	else{
-	N.push_back(N0);
-	}
-}
-return N;
+	return N;
 }
 
 std::vector<double> eulerModified( double h, double N0, double tau1, double tau2 )

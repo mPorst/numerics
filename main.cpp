@@ -7,14 +7,21 @@
 #include <chrono>
 #include "statistics.h"
 
+//shortcut for getting time
+std::chrono::high_resolution_clock::time_point getTime(){return std::chrono::high_resolution_clock::now();}
+
 int main(){
 	
 	//set up gnuplot interface
 	Gnuplot gp;
 
+	//set up solver objects
+	euler eulerSolver;
+
 	double stepsize = 500;
 	double numberMolecules = 100000000;
 	double tau1 = 100000;
+	unsigned int numberIterations = 1000;
 	std::vector<double> Nana, Neuler, NeulerMod, Nrk3a, Nverlet;
 	
 	std::vector<std::chrono::duration<double, std::milli>> teuler, tana, teulerMod, trk3a, tverlet;
@@ -25,24 +32,26 @@ int main(){
 	for(int i=0; i<1000; i++) {
 	// call numerical methods and measure time points between them
 	//
-	std::chrono::high_resolution_clock::time_point t1 = std::chrono::high_resolution_clock::now();
-	Neuler = euler(stepsize, numberMolecules, tau1, 1);
-	std::chrono::high_resolution_clock::time_point t2 = std::chrono::high_resolution_clock::now();
+	auto t1 = getTime();
+	eulerSolver.iterateYN( stepsize, numberIterations );
+	Neuler = eulerSolver.gety();
+	auto t2 = getTime();
 	Nana = analytical(stepsize, numberMolecules, tau1, 1);
-	std::chrono::high_resolution_clock::time_point t3 = std::chrono::high_resolution_clock::now();
+	auto t3 = getTime();
 	NeulerMod = eulerModified(stepsize, numberMolecules, tau1, 1);
-	std::chrono::high_resolution_clock::time_point t4 = std::chrono::high_resolution_clock::now();
+	auto t4 = getTime();
 	Nrk3a = RK3a(stepsize, numberMolecules, tau1, 1);
-	std::chrono::high_resolution_clock::time_point t5 = std::chrono::high_resolution_clock::now();
+	auto t5 = getTime();
 	Nverlet = verlet(stepsize, numberMolecules, tau1, 1);
-	std::chrono::high_resolution_clock::time_point t6 = std::chrono::high_resolution_clock::now();
+	auto t6 = getTime();
 	
-	//time point to duration cast
-	teuler.push_back(std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1));
-	tana.push_back(std::chrono::duration_cast<std::chrono::nanoseconds>(t3-t2));
-	teulerMod.push_back(std::chrono::duration_cast<std::chrono::nanoseconds>(t4-t3));
-	trk3a.push_back(std::chrono::duration_cast<std::chrono::nanoseconds>(t5-t4));
-	tverlet.push_back(std::chrono::duration_cast<std::chrono::nanoseconds>(t6-t5));
+	eulerSolver.resetSolver();
+
+	teuler.push_back(t2-t1);
+	tana.push_back(t3-t2);
+	teulerMod.push_back(t4-t3);
+	trk3a.push_back(t5-t4);
+	tverlet.push_back(t6-t5);
 	}
 
 	//mean value and standard deviation
@@ -85,7 +94,7 @@ int main(){
 
 	//Gnuplot plot
 	gp << "set multiplot layout 1,2 \n";
-	gp << "plot \"myfile.txt\" using 3 title \" euler \"  with lines, \"myfile.txt\" using 4 title \" RungeKutta3a \" with lines ,  \"myfile.txt\" using 2 title \" analytical\" with lines, \"myfile.txt\" using 5 title \" verlet \" with lines \n ";
+	gp << "plot \"myfile.txt\" using 1 title \" euler \"  with lines, \"myfile.txt\" using 4 title \" RungeKutta3a \" with lines ,  \"myfile.txt\" using 2 title \" analytical\" with lines, \"myfile.txt\" using 5 title \" verlet \" with lines \n ";
 	gp << "set logscale y \n";
 	gp << "plot \"myfile.txt\" using 7 title \" error euler modified \" with lines, \"myfile.txt\" using 8 title \"error RK3a\" with lines,  \"myfile.txt\" using 6 title \"error Euler\" with lines,  \"myfile.txt\" using 9 title \"error Verlet\" with lines \n";
 
