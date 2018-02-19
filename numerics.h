@@ -7,7 +7,7 @@ class equation{
 		double y0=100000000;
 
 	public:
-		double f(double t, unsigned int iterStep,std::vector<double> y); // for radioactive decay: -l1*y[i-1]
+		double f(double t, double y); // for radioactive decay: -l1*y[i-1]
 		double gety0();
 };
 
@@ -16,11 +16,11 @@ class solver{
 		std::vector<double> y; // x'(t) = f(t,x(t)) and y(t) are the numerical approximations
 		std::vector<double> t;
 		equation solveEq;
-		unsigned int iterStep;
+		unsigned int iterStep=0;
 
 	public:
-		virtual double iterateY(double h) = 0;
-		virtual void iterateYN(double h, unsigned int n) = 0;
+		virtual void iterateY(double h) = 0;
+		void iterateYN(double h, unsigned int n);
 		std::vector<double> gety();
 		std::vector<double> gett();
 		unsigned int getIterStep();
@@ -29,15 +29,19 @@ class solver{
 
 class euler: public solver{
 	public:
-		euler();
-		double iterateY(double h);		
-		void iterateYN(double h, unsigned int n);
+		void iterateY(double h);		
+};
+
+class eulerModified: public solver{
+	public:
+		void iterateY(double h);		
+};
+
+class RK3a: public solver{ // runge kutta 3rd order variant
+	public:
+		void iterateY(double h);		
 };
 
 
-
-std::vector<double> eulerf( double h, double N0, double tau1, double tau2 );
 std::vector<double> analytical( double h, double N0, double tau1, double tau2 );
-std::vector<double> eulerModified( double h, double N0, double tau1, double tau2 );
-std::vector<double> RK3a( double h, double N0, double tau1, double tau2 );
 std::vector<double> verlet( double h, double N0, double tau1, double tau2 );

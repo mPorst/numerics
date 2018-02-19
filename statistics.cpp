@@ -16,10 +16,10 @@ template <class type>
 double stdDev(std::vector<type> inputArray, double mean){
 	double temp=0;
 	for(unsigned int i=0; i<sizeof(inputArray); i++){
-		temp += pow(inputArray.at(i).count(),2)-pow(mean,2);
+		temp += pow(inputArray.at(i).count()-mean,2);
 	}
 	temp /= (sizeof(inputArray)-1);
-	return temp;
+	return sqrt(temp);
 }
 
 

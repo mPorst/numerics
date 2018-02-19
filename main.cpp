@@ -17,6 +17,9 @@ int main(){
 
 	//set up solver objects
 	euler eulerSolver;
+	eulerModified eulerModSolver;
+	RK3a rk3aSolver;
+	rk3aSolver.resetSolver();
 
 	double stepsize = 500;
 	double numberMolecules = 100000000;
@@ -38,14 +41,18 @@ int main(){
 	auto t2 = getTime();
 	Nana = analytical(stepsize, numberMolecules, tau1, 1);
 	auto t3 = getTime();
-	NeulerMod = eulerModified(stepsize, numberMolecules, tau1, 1);
+	eulerModSolver.iterateYN( stepsize, numberIterations );
+	NeulerMod = eulerModSolver.gety();
 	auto t4 = getTime();
-	Nrk3a = RK3a(stepsize, numberMolecules, tau1, 1);
+	rk3aSolver.iterateYN( stepsize, numberIterations );
+	Nrk3a = rk3aSolver.gety();
 	auto t5 = getTime();
 	Nverlet = verlet(stepsize, numberMolecules, tau1, 1);
 	auto t6 = getTime();
 	
 	eulerSolver.resetSolver();
+	eulerModSolver.resetSolver();
+	rk3aSolver.resetSolver();
 
 	teuler.push_back(t2-t1);
 	tana.push_back(t3-t2);
@@ -94,10 +101,9 @@ int main(){
 
 	//Gnuplot plot
 	gp << "set multiplot layout 1,2 \n";
-	gp << "plot \"myfile.txt\" using 1 title \" euler \"  with lines, \"myfile.txt\" using 4 title \" RungeKutta3a \" with lines ,  \"myfile.txt\" using 2 title \" analytical\" with lines, \"myfile.txt\" using 5 title \" verlet \" with lines \n ";
+	gp << "plot \"myfile.txt\" using 3 title \" euler modified \"  with lines, \"myfile.txt\" using 4 title \" RungeKutta3a \" with lines ,  \"myfile.txt\" using 2 title \" analytical\" with lines, \"myfile.txt\" using 5 title \" verlet \" with lines \n ";
 	gp << "set logscale y \n";
 	gp << "plot \"myfile.txt\" using 7 title \" error euler modified \" with lines, \"myfile.txt\" using 8 title \"error RK3a\" with lines,  \"myfile.txt\" using 6 title \"error Euler\" with lines,  \"myfile.txt\" using 9 title \"error Verlet\" with lines \n";
-
 
 	return 0;
 }

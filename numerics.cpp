@@ -4,10 +4,10 @@
 #include <iostream>
 
 // equation
-double equation::f(double t, unsigned int iterStep,std::vector<double> y)
+double equation::f(double t, double y)
 {
 	// t is unused because the diff. eq. for radioactive decay does not contain t explicitly. Not the case in general !
-	return -l1*y.at(iterStep-1); 
+	return -l1*y; 
 }
 		
 double equation::gety0() {return y0;}
@@ -18,6 +18,13 @@ std::vector<double> solver::gety() {return y;}
 std::vector<double> solver::gett() {return t;}
 unsigned int solver::getIterStep() {return iterStep;}
 
+void solver::iterateYN(double h, unsigned int n)
+{
+	for(unsigned int i=0; i<n; i++){
+		this->iterateY( h );
+	}
+}
+
 void solver::resetSolver()
 {
 	iterStep=0;
@@ -27,28 +34,52 @@ void solver::resetSolver()
 
 // euler
 
-euler::euler() 
-{iterStep = 0;}
+//euler::euler() 
+//{iterStep = 0;}
 
 
-double euler::iterateY(double h) 
+void euler::iterateY(double h) 
 {
 	t.push_back(iterStep*h);
 
 	if(iterStep > 0){
-		y.push_back( y.at(iterStep-1)+h*solveEq.f(t.at(iterStep-1), iterStep, y) ); // t.at(iterStep) or t.at(iterStep-1) ???
+		y.push_back( y.at(iterStep-1)+h*solveEq.f(t.at(iterStep-1), y.at(iterStep-1)) ); // t.at(iterStep) or t.at(iterStep-1) ???
 	}
 	else{
 		y.push_back( solveEq.gety0());
 	}
-	return y.at(iterStep++); // the whole y vector gets stored internally - so return of the iterated y is a bonus
+	++iterStep;
 }
 
-void euler::iterateYN(double h, unsigned int n)
+
+// euler modified
+
+void eulerModified::iterateY(double h) 
 {
-	for(unsigned int i=0; i<n; i++){
-		this->iterateY(h);
+	t.push_back(iterStep*h);
+
+	if(iterStep > 0){
+		y.push_back(y.at(iterStep-1)+0.5*h*(solveEq.f(t.at(iterStep-1), y.at(iterStep-1))+solveEq.f(t.at(iterStep), y.at(iterStep-1)+h*solveEq.f(t.at(iterStep-1), y.at(iterStep-1)))));
 	}
+	else{
+		y.push_back( solveEq.gety0());
+	}
+	++iterStep;
+}
+
+// rk3a
+
+void RK3a::iterateY(double h)
+{
+	t.push_back(iterStep*h);
+
+	if(iterStep > 0){
+		y.push_back(y.at(iterStep-1)+1./6*(h*solveEq.f(t.at(iterStep-1), y.at(iterStep-1))+4*h*solveEq.f(t.at(iterStep-1)+h/2, y.at(iterStep-1)+h*solveEq.f(t.at(iterStep-1),y.at(iterStep-1))/2)+h*solveEq.f(t.at(iterStep-1)+h, y.at(iterStep-1)-h*solveEq.f(t.at(iterStep-1), y.at(iterStep-1))+2*h*solveEq.f(t.at(iterStep-1)-h/2, y.at(iterStep-1)+h*solveEq.f(t.at(iterStep-1), y.at(iterStep-1))/2))));
+	}
+	else{
+		y.push_back( solveEq.gety0());
+	}
+	++iterStep;
 }
 
 
@@ -56,75 +87,13 @@ std::vector<double> analytical( double h, double N0, double tau1, double tau2 )
 {
 	double t;
 	std::vector<double> N;
-	for(int i=0; i<1000; i++)
-	{
+	for(int i=0; i<1000; i++){
 		t=i*h;
 		N.push_back(N0*exp(-1./tau1*t));
 	}
 	return N;
 }
 
-std::vector<double> eulerf( double h, double N0, double tau1, double tau2 )
-{
-	double t;
-	std::vector<double> N;
-	for(int i=0; i<1000; i++)
-	{
-		t=i*h;
-
-		if(i>0){
-		N.push_back( N[i-1]-1./(tau1)*N[i-1]*h );
-		//std::cout << N[i] << std::endl;
-		}
-		else{
-		N.push_back(N0);
-		}
-	}
-	return N;
-}
-
-std::vector<double> eulerModified( double h, double N0, double tau1, double tau2 )
-{
-double t;
-std::vector<double> N;
-for(int i=0; i<1000; i++)
-{
-	t=i*h;
-
-	if(i>0){
-	N.push_back(N[i-1]-(h*(1./tau1*N[i-1]+1./tau1*(N[i-1]-1./tau1*h*N[i-1]))/2) );
-	//std::cout << N[i-1]*h*1./tau1 << '\t' << h*pow(1./tau1,2)*N[i-1] << std::endl;
-	}
-	else{
-	N.push_back(N0);
-	}
-}
-return N;
-}
-
-std::vector<double> RK3a( double h, double N0, double tau1, double tau2 )
-{
-std::vector<double> N;
-double l1 = 1./tau1;
-
-double rkpart1, rkpart2, rkpart3;
-
-for(int i=0; i<1000; i++)
-{
-	//double t=i*h;
-	if(i>0){
-	rkpart1 = -h*l1*N.at(i-1);
-	rkpart2 = -4*h*l1*(N.at(i-1)-h*l1*N.at(i-1)/2);
-	rkpart3 = -h*l1*(N.at(i-1)+h*l1*N.at(i-1)-2*h*l1*(N.at(i-1)-h*l1*N.at(i-1)/2));
-	N.push_back(N.at(i-1)+(1./6)*(rkpart1+rkpart2+rkpart3)); 
-//	std::cout << N.at(i-1) << rkpart1 << '\t' << rkpart2 << '\t' << rkpart3 << '\t' << std::endl;
-	}
-	else {
-	N.push_back(N0);
-	}
-}
-return N;
-}	
 
 std::vector<double> verlet( double h, double N0, double tau1, double tau2 )
 {
